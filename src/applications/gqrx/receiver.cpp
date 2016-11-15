@@ -41,6 +41,7 @@
 #include "dsp/rx_fft.h"
 #include "receivers/nbrx.h"
 #include "receivers/wfmrx.h"
+#include "receivers/pskrx.h"
 
 #ifdef WITH_PULSEAUDIO
 #include "pulseaudio/pa_sink.h"
@@ -893,6 +894,11 @@ receiver::status receiver::set_demod(rx_demod demod)
         rx->set_demod(nbrx::NBRX_DEMOD_SSB);
         break;
 
+    case RX_DEMOD_PSK:
+        connect_all(RX_CHAIN_PSK);
+        rx->set_demod(RX_DEMOD_PSK);
+        break;
+
     default:
         ret = STATUS_ERROR;
         break;
@@ -1355,6 +1361,35 @@ void receiver::connect_all(rx_chain type)
         tb->connect(audio_gain0, 0, audio_snk, 0);
         tb->connect(audio_gain1, 0, audio_snk, 1);
         break;
+    case RX_CHAIN_PSK:
+        if (rx->name() != "PSKRX")
+        {
+            rx.reset();
+            rx = make_pskrx(d_quad_rate);
+        }
+        if (d_decim >= 2)
+        {
+            tb->connect(src, 0, input_decim, 0);
+            tb->connect(input_decim, 0, iq_swap, 0);
+        }
+        else
+        {
+            tb->connect(src, 0, iq_swap, 0);
+        }
+        if (d_dc_cancel)
+        {
+            tb->connect(iq_swap, 0, dc_corr, 0);
+            tb->connect(dc_corr, 0, iq_fft, 0);
+            tb->connect(dc_corr, 0, mixer, 0);
+        }
+        else
+        {
+            tb->connect(iq_swap, 0, iq_fft, 0);
+            tb->connect(iq_swap, 0, mixer, 0);
+        }
+        tb->connect(lo, 0, mixer, 1);
+        tb->connect(mixer, 0, rx, 0);
+        break;
 
     default:
         break;
@@ -1409,4 +1444,42 @@ bool receiver::is_rds_decoder_active(void) const
 void receiver::reset_rds_parser(void)
 {
     rx->reset_rds_parser();
+}
+
+int receiver::get_constellation_symbols(gr_complex *data, int length)
+{
+ if (rx->has_psk())
+     return rx->get_constelation_symbols(data, length);
+ else
+     return 0;
+}
+
+void receiver::set_symbol_rate(float symbolrate)
+{
+    if (rx->has_psk())
+        rx->set_symbol_rate(symbolrate);
+}
+
+void receiver::set_psk_order(int n)
+{
+    if (rx->has_psk())
+        rx->set_psk_order(n);
+}
+
+void receiver::set_pll_alpha(float pllalpha)
+{
+    if (rx->has_psk())
+        rx->set_pll_alpha(pllalpha);
+}
+
+void receiver::set_clock_alpha(float clockalpha)
+{
+    if (rx->has_psk())
+        rx->set_clock_alpha(clockalpha);
+}
+
+void receiver::set_rrc_alpha(float rrcalpha)
+{
+    if (rx->has_psk())
+        rx->set_rrc_alpha(rrcalpha);
 }

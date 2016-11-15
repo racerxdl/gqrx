@@ -106,6 +106,11 @@ MainWindow::MainWindow(const QString cfgfile, bool edit_conf, QWidget *parent) :
     audio_fft_timer = new QTimer(this);
     connect(audio_fft_timer, SIGNAL(timeout()), this, SLOT(audioFftTimeout()));
 
+    d_constellationPoints = new gr_complex[1024];
+
+    constellation_timer = new QTimer(this);
+    connect(constellation_timer, SIGNAL(timeout()), this, SLOT(constellationTimeout()));
+
     d_fftData = new std::complex<float>[MAX_FFT_SIZE];
     d_realFftData = new float[MAX_FFT_SIZE];
     d_pwrFftData = new float[MAX_FFT_SIZE]();
@@ -126,6 +131,7 @@ MainWindow::MainWindow(const QString cfgfile, bool edit_conf, QWidget *parent) :
     uiDockAudio = new DockAudio();
     uiDockInputCtl = new DockInputCtl();
     uiDockFft = new DockFft();
+    uiDockConstellation = new DockConstellation();
     Bookmarks::Get().setConfigDir(m_cfg_dir);
     uiDockBookmarks = new DockBookmarks(this);
 
@@ -150,6 +156,8 @@ MainWindow::MainWindow(const QString cfgfile, bool edit_conf, QWidget *parent) :
     addDockWidget(Qt::RightDockWidgetArea, uiDockInputCtl);
     addDockWidget(Qt::RightDockWidgetArea, uiDockRxOpt);
     addDockWidget(Qt::RightDockWidgetArea, uiDockFft);
+    addDockWidget(Qt::RightDockWidgetArea, uiDockConstellation);
+
     tabifyDockWidget(uiDockInputCtl, uiDockRxOpt);
     tabifyDockWidget(uiDockRxOpt, uiDockFft);
     uiDockRxOpt->raise();
@@ -164,6 +172,7 @@ MainWindow::MainWindow(const QString cfgfile, bool edit_conf, QWidget *parent) :
     /* hide docks that we don't want to show initially */
     uiDockBookmarks->hide();
     uiDockRDS->hide();
+    uiDockConstellation->hide();
 
     /* Add dock widget actions to View menu. By doing it this way all signal/slot
        connections will be established automagially.
@@ -243,6 +252,14 @@ MainWindow::MainWindow(const QString cfgfile, bool edit_conf, QWidget *parent) :
     connect(uiDockFft, SIGNAL(fftPeakHoldToggled(bool)), this, SLOT(setFftPeakHold(bool)));
     connect(uiDockFft, SIGNAL(peakDetectionToggled(bool)), this, SLOT(setPeakDetection(bool)));
     connect(uiDockRDS, SIGNAL(rdsDecoderToggled(bool)), this, SLOT(setRdsDecoder(bool)));
+
+    // PSK Demodulator
+    connect(uiDockConstellation, SIGNAL(pllAlphaChange(float)), this, SLOT(onPllAlphaChange(float)));
+    connect(uiDockConstellation, SIGNAL(clockAlphaChange(float)), this, SLOT(onClockAlphaChange(float)));
+    connect(uiDockConstellation, SIGNAL(pskTypeChange(int)), this, SLOT(onPskTypeChange(int)));
+    connect(uiDockConstellation, SIGNAL(rrcAlphaChange(float)), this, SLOT(onRrcAlphaChange(float)));
+    connect(uiDockConstellation, SIGNAL(symbolRateChange(float)), this, SLOT(onSymbolRateChange(float)));
+
 
     // Bookmarks
     connect(uiDockBookmarks, SIGNAL(newBookmarkActivated(qint64, QString, int)), this, SLOT(onBookmarkActivated(qint64, QString, int)));
@@ -329,6 +346,9 @@ MainWindow::~MainWindow()
     iq_fft_timer->stop();
     delete iq_fft_timer;
 
+    constellation_timer->stop();
+    delete constellation_timer;
+
     audio_fft_timer->stop();
     delete audio_fft_timer;
 
@@ -361,6 +381,7 @@ MainWindow::~MainWindow()
     delete uiDockFft;
     delete uiDockInputCtl;
     delete uiDockRDS;
+    delete uiDockConstellation;
     delete rx;
     delete remote;
     delete [] d_fftData;
@@ -967,6 +988,7 @@ void MainWindow::selectDemod(int mode_idx)
 
         rx->set_demod(receiver::RX_DEMOD_OFF);
         click_res = 1000;
+        uiDockConstellation->hide();
         break;
 
     case DockRxOpt::MODE_RAW:
@@ -975,6 +997,7 @@ void MainWindow::selectDemod(int mode_idx)
         ui->plotter->setDemodRanges(-45000, -200, 200, 45000, true);
         uiDockAudio->setFftRange(0,24000);
         click_res = 100;
+        uiDockConstellation->hide();
         break;
 
     case DockRxOpt::MODE_AM:
@@ -998,6 +1021,7 @@ void MainWindow::selectDemod(int mode_idx)
             ui->plotter->setDemodRanges(-45000, -1000, 1000, 45000, true);
             uiDockAudio->setFftRange(0,24000);
         }
+        uiDockConstellation->hide();
         break;
 
     case DockRxOpt::MODE_WFM_MONO:
@@ -1023,6 +1047,7 @@ void MainWindow::selectDemod(int mode_idx)
         uiDockRDS->setEnabled();
         if (rds_enabled)
             setRdsDecoder(true);
+        uiDockConstellation->hide();
         break;
 
     case DockRxOpt::MODE_LSB:
@@ -1031,6 +1056,7 @@ void MainWindow::selectDemod(int mode_idx)
         ui->plotter->setDemodRanges(-40000, -100, -5000, 0, false);
         uiDockAudio->setFftRange(0,3000);
         click_res = 100;
+        uiDockConstellation->hide();
         break;
 
     case DockRxOpt::MODE_USB:
@@ -1039,6 +1065,7 @@ void MainWindow::selectDemod(int mode_idx)
         ui->plotter->setDemodRanges(0, 5000, 100, 40000, false);
         uiDockAudio->setFftRange(0,3000);
         click_res = 100;
+        uiDockConstellation->hide();
         break;
 
     case DockRxOpt::MODE_CWL:
@@ -1048,6 +1075,7 @@ void MainWindow::selectDemod(int mode_idx)
         ui->plotter->setDemodRanges(-5000, -100, 100, 5000, true);
         uiDockAudio->setFftRange(0,1500);
         click_res = 10;
+        uiDockConstellation->hide();
         break;
 
     case DockRxOpt::MODE_CWU:
@@ -1056,9 +1084,16 @@ void MainWindow::selectDemod(int mode_idx)
         cwofs = uiDockRxOpt->getCwOffset();
         ui->plotter->setDemodRanges(-5000, -100, 100, 5000, true);
         uiDockAudio->setFftRange(0,1500);
+        uiDockConstellation->hide();
         click_res = 10;
         break;
-
+    case DockRxOpt::MODE_PSK:
+        rx->set_demod(receiver::RX_DEMOD_PSK);
+        constellation_timer->start(2000/uiDockFft->fftRate());
+        uiDockConstellation->show();
+        ui->plotter->setDemodRanges(-250000, -10000, 10000, 250000, true);
+        click_res = 10;
+        break;
     default:
         qDebug() << "Unsupported mode selection (can't happen!): " << mode_idx;
         flo = -5000;
@@ -1078,7 +1113,7 @@ void MainWindow::selectDemod(int mode_idx)
     remote->setMode(mode_idx);
     remote->setPassband(flo, fhi);
 
-    d_have_audio = (mode_idx != DockRxOpt::MODE_OFF);
+    d_have_audio = (mode_idx != DockRxOpt::MODE_OFF) && (mode_idx != DockRxOpt::MODE_PSK);
 
     uiDockRxOpt->setCurrentDemod(mode_idx);
 }
@@ -1588,6 +1623,9 @@ void MainWindow::setIqFftRate(int fps)
 
     if (interval > 9 && iq_fft_timer->isActive())
         iq_fft_timer->setInterval(interval);
+
+    if (interval > 9 && constellation_timer->isActive())
+        constellation_timer->setInterval(interval * 2);  // Constellation 2x FFT time
 }
 
 /** Waterfall time span has changed. */
@@ -2001,6 +2039,19 @@ void MainWindow::afsk1200win_closed()
     dec_afsk1200 = 0;
 }
 
+/**
+ * Cyclic processing for acquiring symbols from the receiver and processing
+ * them on the Constellation
+ */
+
+void MainWindow::constellationTimeout()
+{
+
+    int s = rx->get_constellation_symbols(d_constellationPoints, 1024);
+    if (s > 0) {
+        uiDockConstellation->setNewSymbolData(d_constellationPoints, s);
+    }
+}
 
 /**
  * Cyclic processing for acquiring samples from receiver and processing them
@@ -2279,4 +2330,29 @@ void MainWindow::on_actionAddBookmark_triggered()
         uiDockBookmarks->updateBookmarks();
         ui->plotter->updateOverlay();
     }
+}
+
+void MainWindow::onPskTypeChange(int n)
+{
+    rx->set_psk_order(n);
+}
+
+void MainWindow::onSymbolRateChange(float symbolRate)
+{
+    rx->set_symbol_rate(symbolRate);
+}
+
+void MainWindow::onPllAlphaChange(float pllAlpha)
+{
+    rx->set_pll_alpha(pllAlpha);
+}
+
+void MainWindow::onClockAlphaChange(float clockAlpha)
+{
+    rx->set_clock_alpha(clockAlpha);
+}
+
+void MainWindow::onRrcAlphaChange(float rrcAlpha)
+{
+    rx->set_rrc_alpha(rrcAlpha);
 }

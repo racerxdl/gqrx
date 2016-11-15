@@ -40,6 +40,7 @@
 #include "qtgui/dockrds.h"
 #include "qtgui/afsk1200win.h"
 #include "qtgui/iq_tool.h"
+#include "qtgui/dockconstellation.h"
 
 #include "applications/gqrx/remote_control.h"
 
@@ -81,6 +82,8 @@ private:
     qint64 d_hw_freq_start;
     qint64 d_hw_freq_stop;
 
+    gr_complex *d_constellationPoints;
+
     enum receiver::filter_shape d_filter_shape;
     std::complex<float>* d_fftData;
     float          *d_realFftData;
@@ -98,6 +101,7 @@ private:
     DockFft        *uiDockFft;
     DockBookmarks  *uiDockBookmarks;
     DockRDS        *uiDockRDS;
+    DockConstellation *uiDockConstellation;
 
     CIqTool        *iq_tool;
 
@@ -111,6 +115,7 @@ private:
     QTimer   *iq_fft_timer;
     QTimer   *audio_fft_timer;
     QTimer   *rds_timer;
+    QTimer   *constellation_timer;
 
     receiver *rx;
 
@@ -190,6 +195,13 @@ private slots:
     void on_plotter_newFilterFreq(int low, int high);    /*! New filter width */
     void on_plotter_newCenterFreq(qint64 f);
 
+    /* PSK Demodulator */
+    void onPskTypeChange(int n);
+    void onSymbolRateChange(float symbolRate);
+    void onPllAlphaChange(float pllAlpha);
+    void onClockAlphaChange(float clockAlpha);
+    void onRrcAlphaChange(float rrcAlpha);
+
     /* RDS */
     void setRdsDecoder(bool checked);
 
@@ -225,6 +237,7 @@ private slots:
     void iqFftTimeout();
     void audioFftTimeout();
     void rdsTimeout();
+    void constellationTimeout();
 };
 
 #endif // MAINWINDOW_H

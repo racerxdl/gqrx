@@ -97,6 +97,15 @@ public:
     virtual void reset_rds_parser();
     virtual bool is_rds_decoder_active();
 
+    /* PSK parameters */
+    virtual bool has_psk();
+    virtual void set_symbol_rate(float symbolrate);
+    virtual void set_psk_order(int n);
+    virtual void set_pll_alpha(float pllalpha);
+    virtual void set_clock_alpha(float clockalpha);
+    virtual void set_rrc_alpha(float rrcalpha);
+    virtual int get_constelation_symbols(gr_complex *data, int length);
+
 };
 
 #endif // RECEIVER_BASE_H

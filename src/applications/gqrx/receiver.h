@@ -88,14 +88,16 @@ public:
         RX_DEMOD_WFM_M = 4,  /*!< Frequency modulation (wide, mono). */
         RX_DEMOD_WFM_S = 5,  /*!< Frequency modulation (wide, stereo). */
         RX_DEMOD_WFM_S_OIRT = 6,  /*!< Frequency modulation (wide, stereo oirt). */
-        RX_DEMOD_SSB   = 7   /*!< Single Side Band. */
+        RX_DEMOD_SSB   = 7,   /*!< Single Side Band. */
+        RX_DEMOD_PSK   = 8
     };
 
     /** Supported receiver types. */
     enum rx_chain {
         RX_CHAIN_NONE  = 0,   /*!< No receiver, just spectrum analyzer. */
         RX_CHAIN_NBRX  = 1,   /*!< Narrow band receiver (AM, FM, SSB). */
-        RX_CHAIN_WFMRX = 2    /*!< Wide band FM receiver (for broadcast). */
+        RX_CHAIN_WFMRX = 2,   /*!< Wide band FM receiver (for broadcast). */
+        RX_CHAIN_PSK   = 4
     };
 
     /** Filter shape (convenience wrappers for "transition width"). */
@@ -214,6 +216,15 @@ public:
     void        stop_rds_decoder();
     bool        is_rds_decoder_active(void) const;
     void        reset_rds_parser(void);
+
+    /* psk functions*/
+
+    void        set_symbol_rate(float symbolrate);
+    void        set_psk_order(int n);
+    void        set_pll_alpha(float pllalpha);
+    void        set_clock_alpha(float clockalpha);
+    void        set_rrc_alpha(float rrcalpha);
+    int         get_constellation_symbols(gr_complex *data, int length);
 
 private:
     void        connect_all(rx_chain type);

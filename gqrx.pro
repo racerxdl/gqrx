@@ -136,7 +136,10 @@ SOURCES += \
     src/qtgui/qtcolorpicker.cpp \
     src/receivers/nbrx.cpp \
     src/receivers/receiver_base.cpp \
-    src/receivers/wfmrx.cpp
+    src/receivers/wfmrx.cpp \
+    src/qtgui/dockconstellation.cpp \
+    src/qtgui/constellation.cpp \
+    src/receivers/pskrx.cpp
 
 HEADERS += \
     src/applications/gqrx/gqrx.h \
@@ -194,7 +197,10 @@ HEADERS += \
     src/qtgui/qtcolorpicker.h \
     src/receivers/nbrx.h \
     src/receivers/receiver_base.h \
-    src/receivers/wfmrx.h
+    src/receivers/wfmrx.h \
+    src/qtgui/dockconstellation.h \
+    src/qtgui/constellation.h \
+    src/receivers/pskrx.h
 
 FORMS += \
     src/applications/gqrx/mainwindow.ui \
@@ -211,7 +217,8 @@ FORMS += \
     src/qtgui/iq_tool.ui \
     src/qtgui/dockrxopt.ui \
     src/qtgui/ioconfig.ui \
-    src/qtgui/nb_options.ui
+    src/qtgui/nb_options.ui \
+    src/qtgui/dockconstellation.ui
 
 # Use pulseaudio (ps: could use equals? undocumented)
 equals(AUDIO_BACKEND, "pulseaudio"): {

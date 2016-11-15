@@ -106,6 +106,9 @@ public:
     bool has_am() { return true; }
     void set_am_dcr(bool enabled);
 
+    /* PSK parameters */
+    bool has_psk() { return false; }
+
 private:
     bool   d_running;          /*!< Whether receiver is running or not. */
     float  d_quad_rate;        /*!< Input sample rate. */

@@ -156,3 +156,33 @@ bool receiver_base_cf::is_rds_decoder_active()
 {
     return false;
 }
+
+bool receiver_base_cf::has_psk()
+{
+    return false;
+}
+
+int receiver_base_cf::get_constelation_symbols(gr_complex *, int)
+{
+    return 0;
+}
+
+void receiver_base_cf::set_symbol_rate(float)
+{
+}
+
+void receiver_base_cf::set_psk_order(int)
+{
+}
+
+void receiver_base_cf::set_pll_alpha(float)
+{
+}
+
+void receiver_base_cf::set_clock_alpha(float)
+{
+}
+
+void receiver_base_cf::set_rrc_alpha(float)
+{
+}

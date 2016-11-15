@@ -31,17 +31,18 @@ QStringList DockRxOpt::ModulationStrings;
 // Filter preset table per mode, preset and lo/hi
 static const int filter_preset_table[DockRxOpt::MODE_LAST][3][2] =
 {   //     WIDE             NORMAL            NARROW
-    {{      0,      0}, {     0,     0}, {     0,     0}},  // MODE_OFF
-    {{ -15000,  15000}, { -5000,  5000}, { -1000,  1000}},  // MODE_RAW
-    {{ -10000,  10000}, { -5000,  5000}, { -2500,  2500}},  // MODE_AM
-    {{ -10000,  10000}, { -5000,  5000}, { -2500,  2500}},  // MODE_NFM
-    {{-100000, 100000}, {-80000, 80000}, {-60000, 60000}},  // MODE_WFM_MONO
-    {{-100000, 100000}, {-80000, 80000}, {-60000, 60000}},  // MODE_WFM_STEREO
-    {{  -4000,   -100}, { -2800,  -100}, { -1600,  -200}},  // MODE_LSB
-    {{    100,   4000}, {   100,  2800}, {   200,  1600}},  // MODE_USB
-    {{  -1000,   1000}, {  -250,   250}, {  -100,   100}},  // MODE_CWL
-    {{  -1000,   1000}, {  -250,   250}, {  -100,   100}},  // MODE_CWU
-    {{-100000, 100000}, {-80000, 80000}, {-60000, 60000}}   // MODE_WFM_STEREO_OIRT
+    {{      0,      0}, {     0,       0}, {     0,     0}},  // MODE_OFF
+    {{ -15000,  15000}, { -5000,    5000}, { -1000,  1000}},  // MODE_RAW
+    {{ -10000,  10000}, { -5000,    5000}, { -2500,  2500}},  // MODE_AM
+    {{ -10000,  10000}, { -5000,    5000}, { -2500,  2500}},  // MODE_NFM
+    {{-100000, 100000}, {-80000,   80000}, {-60000, 60000}},  // MODE_WFM_MONO
+    {{-100000, 100000}, {-80000,   80000}, {-60000, 60000}},  // MODE_WFM_STEREO
+    {{  -4000,   -100}, { -2800,    -100}, { -1600,  -200}},  // MODE_LSB
+    {{    100,   4000}, {   100,    2800}, {   200,  1600}},  // MODE_USB
+    {{  -1000,   1000}, {  -250,     250}, {  -100,   100}},  // MODE_CWL
+    {{  -1000,   1000}, {  -250,     250}, {  -100,   100}},  // MODE_CWU
+    {{-100000, 100000}, {-80000,   80000}, {-60000, 60000}},  // MODE_WFM_STEREO_OIRT
+    {{-200000, 200000}, {-100000, 100000}, {-60000, 60000}}   // PSK
 };
 
 DockRxOpt::DockRxOpt(qint64 filterOffsetRange, QWidget *parent) :
@@ -66,6 +67,7 @@ DockRxOpt::DockRxOpt(qint64 filterOffsetRange, QWidget *parent) :
         ModulationStrings.append("CW-L");
         ModulationStrings.append("CW-U");
         ModulationStrings.append("WFM (oirt)");
+        ModulationStrings.append("PSK");
     }
     ui->modeSelector->addItems(ModulationStrings);
 
