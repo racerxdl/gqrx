@@ -87,9 +87,11 @@ void CConstellation::draw()
         paint.setPen(QColor(255, 255, 255, 255));
         paint.setBrush(QBrush(QColor(255,255,255,255), Qt::SolidPattern));
         for (int i=0; i<m_symbolLength; i++) {
-            float x = m_symbols[i].real() * this->m_scaleX * (m_Size.width() / 2) + (m_Size.width() / 2);
-            float y = m_symbols[i].imag() * this->m_scaleY * (m_Size.height() / 2) + (m_Size.height() / 2);
-            paint.drawEllipse(QPoint(x,y), 1, 1);
+            if (m_symbols[i].real() != 0 &&  m_symbols[i].imag() != 0) {
+                float x = m_symbols[i].real() * this->m_scaleX * (m_Size.width() / 2) + (m_Size.width() / 2);
+                float y = m_symbols[i].imag() * this->m_scaleY * (m_Size.height() / 2) + (m_Size.height() / 2);
+                paint.drawEllipse(QPoint(x,y), 1, 1);
+            }
         }
         update();
     }

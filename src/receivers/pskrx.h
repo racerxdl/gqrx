@@ -11,6 +11,7 @@
 #include <gnuradio/analog/agc_cc.h>
 
 #include <boost/circular_buffer.hpp>
+#include <chrono>
 #include "receiver_base.h"
 #include "dsp/rx_meter.h"
 
@@ -21,14 +22,14 @@ typedef boost::shared_ptr<pskrx> pskrx_sptr;
 typedef boost::shared_ptr<SymbolBuffer> SymbolBuffer_sptr;
 
 pskrx_sptr make_pskrx(float quad_rate);
-SymbolBuffer_sptr make_SymbolBuffer(int length);
+SymbolBuffer_sptr make_SymbolBuffer(int length, double period);
 
 class SymbolBuffer: public gr::sync_block
 {
-    friend SymbolBuffer_sptr make_SymbolBuffer(int length);
+    friend SymbolBuffer_sptr make_SymbolBuffer(int length, double period);
 
 protected:
-    SymbolBuffer(int length);
+    SymbolBuffer(int length, double period);
 public:
 
     int work(int noutput_items, gr_vector_const_void_star &input_items, gr_vector_void_star &);
@@ -38,7 +39,10 @@ public:
     void clear() { this->buffer.clear(); }
 
 private:
-    boost::circular_buffer<gr_complex> buffer;
+    const double period;
+    std::vector<gr_complex> buffer;
+    unsigned int curPos;
+    std::chrono::time_point<std::chrono::system_clock> lastUpdate;
 };
 
 

@@ -60,7 +60,7 @@ target.path  = $$PREFIX/bin
 INSTALLS    += target 
 
 #CONFIG += debug
-
+CONFIG += c++11
 # disable debug messages in release
 CONFIG(debug, debug|release) {
     # Use for valgrind

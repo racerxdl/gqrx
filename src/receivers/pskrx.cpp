@@ -1,28 +1,48 @@
 #include "pskrx.h"
 #include <QDebug>
 
-SymbolBuffer_sptr make_SymbolBuffer(int length)
+SymbolBuffer_sptr make_SymbolBuffer(int length, double period)
 {
-    return gnuradio::get_initial_sptr(new SymbolBuffer(length));
+    return gnuradio::get_initial_sptr(new SymbolBuffer(length, period));
 }
 
-SymbolBuffer::SymbolBuffer(int length)
+SymbolBuffer::SymbolBuffer(int length, double period)
     : gr::sync_block("SymbolBuffer",
         gr::io_signature::make (1, 1, sizeof (gr_complex)),
-        gr::io_signature::make (0, 0, 0))
+        gr::io_signature::make (0, 0, 0)),
+      period(period),
+      curPos(0)
 {
-    this->buffer.set_capacity(length);
+    for (int i=0; i<length; i++) {
+        this->buffer.push_back(gr_complex(0,0));
+    }
+    lastUpdate = std::chrono::system_clock::now();
 }
 
 int SymbolBuffer::work(int noutput_items, gr_vector_const_void_star &input_items, gr_vector_void_star &)
 {
-    const gr_complex *in = (const gr_complex *) input_items[0];
-    int i = 0;
-    while ( i < noutput_items ) {
-        this->buffer.push_back(in[i]);
-        i++;
+    std::chrono::time_point<std::chrono::system_clock> curTime = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsedTime = curTime - lastUpdate;
+    if (elapsedTime.count() > period) {
+        const gr_complex *in = (const gr_complex *) input_items[0];
+        int copySize = this->buffer.size() - curPos - 1;
+        if ( noutput_items < copySize) {
+            copySize = noutput_items;
+        }
+
+        memcpy(&this->buffer[curPos], in, sizeof(gr_complex) * copySize);
+        curPos += copySize;
+
+        for (unsigned int i=curPos; i<this->buffer.size(); i++) {
+            this->buffer[i] = gr_complex(0, 0);
+        }
+
+        curPos = 0;
+
+        lastUpdate = std::chrono::system_clock::now();
     }
-    return noutput_items;
+
+    return this->buffer.size();
 }
 
 int SymbolBuffer::get_constellation_symbols(gr_complex *data, int length)
@@ -43,7 +63,7 @@ pskrx_sptr make_pskrx(float quad_rate)
 pskrx::pskrx(float quad_rate)
     : receiver_base_cf("PSK")
 {
-    this->symbolBuffer = make_SymbolBuffer(1024);
+    this->symbolBuffer = make_SymbolBuffer(1024, 1.0 / 60);
     this->pllAlpha = 1.99e-3;
     this->loopOrder = 2;
     this->symbolRate = 293883;
