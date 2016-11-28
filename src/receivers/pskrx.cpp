@@ -70,6 +70,8 @@ pskrx::pskrx(float quad_rate)
     this->clockAlpha = 3.7e-3;
     this->rrcAlpha = 0.5;
     this->quadRate = quad_rate;
+    this->hasFileSink = false;
+    this->hasUdpSink = false;
 
     initialize();
 }
@@ -91,6 +93,7 @@ void pskrx::initialize()
     this->agc = gr::analog::agc_cc::make(100e-4, 0.5, 0.5);
     this->agc->set_max_gain(4000);
     this->meter = make_rx_meter_c(DETECTOR_TYPE_RMS);
+    this->complexToChar = gr::blocks::complex_to_interleaved_char::make();
 
     connect(self(), 0, rrcFilter, 0);
     connect(rrcFilter, 0, agc, 0);
@@ -98,6 +101,8 @@ void pskrx::initialize()
     connect(rrcFilter, 0, meter, 0);
     connect(costasLoop, 0, mmcr, 0);
     connect(mmcr, 0, symbolBuffer, 0);
+    connect(mmcr, 0, complexToChar, 0);
+    connect(complexToChar, 0, nullSink, 0);
 
     // No Audio Output
     connect(nullSource, 0, self(), 0);
@@ -196,4 +201,30 @@ float pskrx::get_signal_level(bool dbfs)
 void pskrx::set_demod(int)
 {
     // Do Nothing
+}
+
+
+void pskrx::set_file_output(std::string &output_file)
+{
+    lock();
+    if (hasFileSink) {
+        disconnect(complexToChar, 0, fileSink, 0);
+    }
+
+    fileSink = gr::blocks::file_sink::make(1, output_file.c_str());
+    connect(complexToChar, 0, fileSink, 0);
+    hasFileSink = true;
+    unlock();
+}
+
+void pskrx::set_udp_output(std::string &hostname, int port)
+{
+    lock();
+    if (hasUdpSink) {
+        disconnect(complexToChar, 0, udpSink, 0);
+    }
+    udpSink = gr::blocks::udp_sink::make(1, hostname, port, 16, false);
+    connect(complexToChar, 0, udpSink, 0);
+    hasUdpSink = true;
+    unlock();
 }

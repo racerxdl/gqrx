@@ -105,6 +105,8 @@ public:
     virtual void set_clock_alpha(float clockalpha);
     virtual void set_rrc_alpha(float rrcalpha);
     virtual int get_constelation_symbols(gr_complex *data, int length);
+    virtual void set_file_output(std::string &output_file);
+    virtual void set_udp_output(std::string &hostname, int port);
 
 };
 

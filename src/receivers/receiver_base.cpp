@@ -186,3 +186,12 @@ void receiver_base_cf::set_clock_alpha(float)
 void receiver_base_cf::set_rrc_alpha(float)
 {
 }
+
+
+void receiver_base_cf::set_file_output(std::string &)
+{
+}
+
+void receiver_base_cf::set_udp_output(std::string &, int)
+{
+}
