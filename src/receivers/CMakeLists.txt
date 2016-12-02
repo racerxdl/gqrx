@@ -7,4 +7,6 @@ add_source_files(SRCS_LIST
 	receiver_base.h
 	wfmrx.cpp
 	wfmrx.h
+  pskrx.cpp
+  pskrx.h
 )
